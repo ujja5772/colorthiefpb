@@ -1101,7 +1101,7 @@ function pxPrint(){let ans=false;const ov=document.createElement('div');ov.class
   draw()}
 
 /* ---------- 🔍 숨은 용의자 찾기 (듣기·읽기) ---------- */
-let HS=Object.assign({mode:'find',n:24,rounds:5,sec:60},LS.get('mt_hs_cfg',{}));
+let HS=Object.assign({mode:'find',n:24,rounds:5,sec:60,say:1},LS.get('mt_hs_cfg',{}));
 const HS_PARTS=k=>[1,2,3,4,5].map(p=>({p,en:enOf(k,p)}));
 function hsMatch(f,clues){return clues.every(c=>{const p=HS_PARTS(f.k).find(x=>x.en===c.en);return p&&f.cs[p.p]===c.color})}
 function hsCrowd(n){const out=[];for(let i=0;i<n;i++){const k=pick(['a','b','c','d']);const cs={};const pal=shuffle(W9);for(let p=1;p<=5;p++)cs[p]=pal[p-1];out.push({k,cs})}return out}
@@ -1115,11 +1115,12 @@ function hsSetup(){
    <div class="col" style="gap:6px"><b class="lbl">놀이 방법</b>${lvlBtns('md',[['find','⏱ 기록 재기'],['time','⏳ 제한 시간 안에 몇 명?'],['count','🔢 몇 명 있을까?']],HS.mode)}
     <span class="soft" style="font-size:17px">${HS.mode==='find'?'단서에 맞는 범인 한 명을 찾아요. 정해진 수를 다 찾는 시간을 재요.':HS.mode==='time'?'시간이 끝날 때까지 단서에 맞는 범인을 최대한 많이 찾아요.':'단서에 맞는 사람이 모두 몇 명인지 세어 맞혀요. (월리를 찾아라처럼!)'}</span></div>
    <div class="col" style="gap:6px"><b class="lbl">사람 수 (난이도)</b>${lvlBtns('nn',[[16,'16명 ⭐'],[24,'24명 ⭐⭐'],[36,'36명 ⭐⭐⭐']],HS.n)}</div>
+   <div class="col" style="gap:6px"><b class="lbl">단서 읽어 주기</b>${lvlBtns('sy',[[1,'🔊 켜기'],[0,'🔇 끄기']],HS.say?1:0)}<span class="soft" style="font-size:17px">끄면 아이들이 단서를 직접 읽어요. 게임 중에 🔊 단서 듣기 버튼을 누르면 들을 수 있어요.</span></div>
    ${HS.mode==='find'?`<div class="col" style="gap:6px"><b class="lbl">찾을 범인 수</b>${lvlBtns('rd',[[3,'3명'],[5,'5명'],[10,'10명']],HS.rounds)}</div>`:''}
    ${HS.mode==='time'?`<div class="col" style="gap:6px"><b class="lbl">제한 시간</b>${lvlBtns('sc',[[60,'1분'],[90,'1분 30초'],[120,'2분']],HS.sec)}</div>`:''}
    <div class="row" style="justify-content:space-between"><span class="pill" style="font-size:20px">${HS.mode==='count'?'🔢 문제를 맞힐수록 단서가 늘어나요':`🏆 최고 기록: ${b!=null?(HS.mode==='find'?b.toFixed(1)+'초':b+'명'):'아직 없음'}`}</span><button class="btn go big" id="go">수사 시작! 🔍</button></div></div></div>`);
   gBind();const sv=()=>{LS.set('mt_hs_cfg',HS);hsSetup()};
-  $$('[data-md]').forEach(x=>x.onclick=()=>{HS.mode=x.dataset.md;sv()});$$('[data-nn]').forEach(x=>x.onclick=()=>{HS.n=+x.dataset.nn;sv()});
+  $$('[data-md]').forEach(x=>x.onclick=()=>{HS.mode=x.dataset.md;sv()});$$('[data-nn]').forEach(x=>x.onclick=()=>{HS.n=+x.dataset.nn;sv()});$$('[data-sy]').forEach(x=>x.onclick=()=>{HS.say=+x.dataset.sy;sv()});
   $$('[data-rd]').forEach(x=>x.onclick=()=>{HS.rounds=+x.dataset.rd;sv()});$$('[data-sc]').forEach(x=>x.onclick=()=>{HS.sec=+x.dataset.sc;sv()});
   $('#go').onclick=()=>{loadAll().then(HS.mode==='count'?hsCount:hsFind)};
 }
@@ -1139,7 +1140,7 @@ function hsFind(){gStop();
     $$('.hsp').forEach(b=>b.onclick=()=>{if(st.ended)return;const i=+b.dataset.i;
       if(i===ti){b.classList.add('got');ding(true);st.found++;const hc=$('#hsCnt');if(hc)hc.textContent=st.timed?`잡은 범인 ${st.found}명`:`${st.found} / ${HS.rounds}`;hush();const sg=SAYGEN;Promise.race([speak("That's right!"),sleep(1400)]).then(()=>{if(sg===SAYGEN&&!st.ended)gT(()=>{if(!st.timed&&st.found>=HS.rounds)return end();round()},200)})}
       else{b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake','no');ding(false);if(!st.timed){st.pen+=2;$('#hsMsg').textContent='앗! 단서를 다시 읽어 봐요 (+2초)'}else $('#hsMsg').textContent='앗! 단서를 다시 읽어 봐요'}});
-    clueSay(clues);
+    if(HS.say)clueSay(clues);
     if(!st.started){st.started=true;st.t0=performance.now();gI(()=>{const t=$('#hsT');if(!t)return;const el=(performance.now()-st.t0)/1000;
       if(st.timed){const left=Math.max(0,HS.sec-el);t.textContent=Math.ceil(left)+'초';if(left<=0)end()}else t.textContent=(el+st.pen).toFixed(1)+'초'},100)}};
   const end=()=>{if(st.ended)return;st.ended=true;gStop();hush();
@@ -1165,7 +1166,7 @@ function hsCount(){gStop();let lv=1,score=0,q=0;
     app.innerHTML=shell(gHead('🔢 몇 명 있을까?',`<span class="pill" style="font-size:22px">${q}번째 문제</span><span class="pill" style="font-size:22px">맞힌 문제 ${score}</span><button class="btn yel" id="hsSay">🔊 단서 듣기</button>`)+
       `<div class="hsclues"><span style="font-family:var(--f-d);font-size:24px">이런 사람은 모두 몇 명일까요?</span>${clueHTML(clues)}</div>${hsBoard(crowd,lay,crowd.map((o,i)=>hsMatch(o,clues)?i:-1))}
        <div class="hsnums">${Array.from({length:10},(_,i)=>`<button class="btn" data-n="${i}">${i}</button>`).join('')}<button class="btn sm" id="hsShow">정답 보기</button></div>`);
-    gBind();$('#hsSay').onclick=()=>clueSay(clues);clueSay(clues);
+    gBind();$('#hsSay').onclick=()=>clueSay(clues);if(HS.say)clueSay(clues);
     const reveal=(pickN)=>{if(answered)return;answered=true;const ok=pickN===cnt;$$('.hsp').forEach(b=>{const m=hsMatch(crowd[+b.dataset.i],clues);b.classList.add(m?'got':'dim')});
       if(pickN!=null){if(ok){score++;lv++;confetti(120);ding(true);hush();speak(`That's right! ${cnt}!`)}else{ding(false)}}
       $('.hsnums').innerHTML=`<span style="font-family:var(--f-d);font-size:32px">${pickN==null?'':ok?'🎉 정답! ':`🙈 ${pickN}명이 아니에요. `}정답은 <b>${cnt}명</b>이에요</span><button class="btn go big" id="hsNext">다음 문제 ▶</button><button class="btn sm" id="hsSet">설정</button>`;
@@ -1232,7 +1233,7 @@ const EN_DICT={
 "학년 반 개수":"Number of classes","#개 반":"# classes","기록 모두 지우기":"Clear all records",
 "① 단어 (Red!)":"① Word (Red!)","② 문장 (It's red.)":"② Sentence (It's red.)","③ 발자국이 움직여요":"③ Moving footprints",
 "🙋 도전자 번호":"Player no.","추격 시작! 🐾":"Start the chase!",
-"🏆 반별 최고 기록":"Best time by class","#문제 · ① 단어 기준":"# questions · ① Word","#문제 · ② 문장 기준":"# questions · ② Sentence","#문제 · ③ 움직임 기준":"# questions · ③ Moving",
+"단서 읽어 주기":"Read clues aloud","🔊 켜기":"🔊 On","🔇 끄기":"🔇 Off","끄면 아이들이 단서를 직접 읽어요. 게임 중에 🔊 단서 듣기 버튼을 누르면 들을 수 있어요.":"When off, students read the clues themselves. Tap 🔊 Hear clues anytime during the game.","🏆 반별 최고 기록":"Best time by class","#문제 · ① 단어 기준":"# questions · ① Word","#문제 · ② 문장 기준":"# questions · ② Sentence","#문제 · ③ 움직임 기준":"# questions · ③ Moving",
 "#반 순위":"Class # ranking","아직 기록이 없어요. 첫 기록에 도전!":"No records yet. Be the first!",
 "🔊 다시 듣기":"Listen again","잘 듣고 터치해요!":"Listen and touch!","앗! 다시 잘 들어 봐요 (+#초)":"Oops! Listen again (+# sec)",
 "체포 완료!":"Caught!","다음 도전자":"Next player","도전! 🐾":"Go!","🏆 기록 보기 · 설정":"Records · Settings",
