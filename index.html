@@ -1117,7 +1117,7 @@ function hsSetup(){
    <div class="col" style="gap:6px"><b class="lbl">사람 수 (난이도)</b>${lvlBtns('nn',[[16,'16명 ⭐'],[24,'24명 ⭐⭐'],[36,'36명 ⭐⭐⭐']],HS.n)}</div>
    ${HS.mode==='find'?`<div class="col" style="gap:6px"><b class="lbl">찾을 범인 수</b>${lvlBtns('rd',[[3,'3명'],[5,'5명'],[10,'10명']],HS.rounds)}</div>`:''}
    ${HS.mode==='time'?`<div class="col" style="gap:6px"><b class="lbl">제한 시간</b>${lvlBtns('sc',[[60,'1분'],[90,'1분 30초'],[120,'2분']],HS.sec)}</div>`:''}
-   <div class="row" style="justify-content:space-between"><span class="pill" style="font-size:20px">${HS.mode==='count'?'🔢 문제를 맞힐수록 단서가 늘어나요':`🏆 ${esc(CLS)}반 최고 기록: ${b!=null?(HS.mode==='find'?b.toFixed(1)+'초':b+'명'):'아직 없음'}`}</span><button class="btn go big" id="go">수사 시작! 🔍</button></div></div></div>`);
+   <div class="row" style="justify-content:space-between"><span class="pill" style="font-size:20px">${HS.mode==='count'?'🔢 문제를 맞힐수록 단서가 늘어나요':`🏆 최고 기록: ${b!=null?(HS.mode==='find'?b.toFixed(1)+'초':b+'명'):'아직 없음'}`}</span><button class="btn go big" id="go">수사 시작! 🔍</button></div></div></div>`);
   gBind();const sv=()=>{LS.set('mt_hs_cfg',HS);hsSetup()};
   $$('[data-md]').forEach(x=>x.onclick=()=>{HS.mode=x.dataset.md;sv()});$$('[data-nn]').forEach(x=>x.onclick=()=>{HS.n=+x.dataset.nn;sv()});
   $$('[data-rd]').forEach(x=>x.onclick=()=>{HS.rounds=+x.dataset.rd;sv()});$$('[data-sc]').forEach(x=>x.onclick=()=>{HS.sec=+x.dataset.sc;sv()});
@@ -1148,7 +1148,7 @@ function hsFind(){gStop();
     confetti(160);speak('Great job, detectives!');
     $('#hsF').outerHTML=`<div class="folder" style="text-align:center;padding:30px;margin-top:10px"><span class="stamp" style="font-size:44px">${st.timed?'TIME UP!':'수사 완료!'}</span>
       <p style="font-family:var(--f-e);font-weight:700;font-size:64px;margin:14px 0 4px">${st.timed?v+'명':v.toFixed(1)+'초'}</p>
-      <p style="font-family:var(--f-d);font-size:28px;margin:0">${isNew?(old==null?'🏆 첫 기록이에요!':`🏆 ${esc(CLS)}반 신기록! (전: ${st.timed?old+'명':old.toFixed(1)+'초'})`):`🏆 ${esc(CLS)}반 최고 기록: ${st.timed?old+'명':old.toFixed(1)+'초'}`}</p>
+      <p style="font-family:var(--f-d);font-size:28px;margin:0">${isNew?(old==null?'🏆 첫 기록이에요!':`🏆 신기록! (전: ${st.timed?old+'명':old.toFixed(1)+'초'})`):`🏆 최고 기록: ${st.timed?old+'명':old.toFixed(1)+'초'}`}</p>
       <div class="row" style="justify-content:center;margin-top:18px"><button class="btn" id="hsSet">설정</button><button class="btn go big" id="hsAgain">한 번 더! 🔍</button></div></div>`;
     $('.hsclues').remove();$('#hsMsg').textContent='';$('#hsAgain').onclick=hsFind;$('#hsSet').onclick=hsSetup};
   round();
@@ -1337,7 +1337,7 @@ const EN_RULES=[
  [/^[①-⑤]? ?(서류 가방|머리카락|티셔츠|원피스|목도리|넥타이|스웨터|모자|가방|우산|코트|치마|풍선|공)( —)?$/,()=>''],
  [/^반짝이는 [①-⑤] \S+( \S+)? (\S+), 다 함께 물어봐요!$/,m=>`Ask together about the blinking ${m[2]}!`],
  [/^🔐 (\S+)반 (\d+)번 수사관$/,m=>`Detective · Class ${m[1]} · No. ${m[2]}`],
- [/^🏆 (\S+)반 최고 기록: (.+)$/,m=>`Best in class ${m[1]}: ${m[2].replace('아직 없음','none yet').replace('초',' sec').replace('명','')}`],
+ [/^🏆 최고 기록: (.+)$/,m=>`🏆 Best: ${m[1].replace('아직 없음','none yet').replace('초',' sec').replace('명',' people')}`],[/^🏆 신기록! \(전: (.+)\)$/,m=>`🏆 New record! (before: ${m[1].replace('초',' sec').replace('명',' people')})`],[/^🏆 (\S+)반 최고 기록: (.+)$/,m=>`Best in class ${m[1]}: ${m[2].replace('아직 없음','none yet').replace('초',' sec').replace('명','')}`],
  [/^(\S+)반 (\d+)번$/,m=>`Class ${m[1]} · No. ${m[2]}`],
  [/^(\d+)반 (\d+)명 중 (\d+)등 · 우리 반 기록 ([\d.]+)초$/,m=>`Rank ${m[3]} of ${m[2]} · Class record ${m[4]} sec`],
  [/^🏆 (\d+)반 (첫 기록이에요!|신기록! \(전: ([\d.]+)초\))$/,m=>m[3]?`New class record! (was ${m[3]} sec)`:'First class record!'],
@@ -1403,7 +1403,7 @@ function shell(inner){
   const nav=[['home','🏠 처음'],['class','🏫 수사 본부'],['make','🖍️ 몽타주 만들기'],['oral','🕵️ 범인을 찾아라']];
   return `<header class="top"><div class="top-in"><button class="logo" data-go="home"><span>🔍</span><b>색깔을 훔쳐간 범인</b></button>
    <nav class="nav">${nav.map(([k,t])=>`<button data-go="${k}" class="${ROUTE.name===k?'on':''}">${t}</button>`).join('')}</nav>
-   <div class="right"><label class="cls">반 <input id="clsIn" value="${esc(CLS)}" aria-label="반"></label><button class="btn sm" id="biBtn" title="English">🌐 한/EN</button><button class="btn sm" id="spd">${SPEED==='slow'?'🐢 천천히':'🐇 보통'}</button></div></div></header><main>${inner}</main>`}
+   <div class="right"><button class="btn sm" id="biBtn" title="English">🌐 한/EN</button><button class="btn sm" id="spd">${SPEED==='slow'?'🐢 천천히':'🐇 보통'}</button></div></div></header><main>${inner}</main>`}
 function render(){({home:renderHome,class:renderClass,make:renderMake,oral:renderOral})[ROUTE.name]();applyBI()}
 function renderHome(){
   const card=(go,tag,tone,title,en,desc)=>`<button data-go="${go}" class="hcard"><span class="htag ${tone}">${tag}</span><b class="htitle">${title}</b><span class="hen">${en}</span><span class="hdesc">${desc}</span><span class="hgo">→</span></button>`;
@@ -1415,7 +1415,7 @@ function renderHome(){
     ${card('class','전자칠판 · 수업 게임','t1','수사 본부','Detective HQ','듣기 · 말하기 · 읽기 게임 7가지')}
     ${card('make','학생 크롬북','t2','범인 몽타주 만들기','Make the Thief’s Sketch','색칠하고, 쓰고, 묻고 답한 뒤 수사 파일 코드를 받아요')}
     ${card('oral','전자칠판 · 발표','t3','범인을 찾아라','Find the Thief','코드를 넣고 친구들 앞에서 범인을 알려 줘요')}
-   </section><p class="credit">made by Tr. Olivia · 서버 없이 쓰는 공유용 버전이에요. 이름이나 번호를 받지 않아요.</p>`);
+   </section><p class="credit">made by Tr. Olivia</p>`);
   loadAll().then(()=>{const box=$('#homeSus');if(!box)return;['a','b','c','d'].forEach(k=>{const cs={};const pal=shuffle(W9);for(let p=1;p<=5;p++)cs[p]=pal[p-1];const im=document.createElement('img');im.src=susImg(k,cs,.5,true);im.alt='';box.appendChild(im)})});
 }
 /* ---------- 몽타주 만들기: 등록 없이 바로 시작 ---------- */
