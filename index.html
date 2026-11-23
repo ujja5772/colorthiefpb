@@ -337,6 +337,7 @@ html.bi .hubc .htitle .tr{font-family:var(--f-t);font-weight:800;font-size:17px;
 #printArea.qrp{display:flex!important;justify-content:center;align-items:center;height:188mm}
 .qrc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm;text-align:center}
 .qrc b{font-size:28pt}.qrc svg{width:140mm;height:140mm}.qrcs{font-size:18pt}.qrcu{font-size:7.5pt;color:#444;word-break:break-all}
+.newb{display:inline-block;margin:0 auto 0 8px;align-self:center;background:#E8483B;color:#fff;font-family:var(--f-b,sans-serif);font-weight:800;font-size:13px;letter-spacing:.5px;padding:3px 8px;border-radius:999px;transform:translateY(-2px)}
 </style>
 </head>
 <body>
@@ -870,12 +871,12 @@ const HUB=[
   {h:'📖 읽기',items:[{id:'wp',ic:'📜',t:'수배 전단을 읽어라',d:'"Look at the cap. It\'s blue." 전단을 읽고 진짜 범인을 골라요.',tag:'읽기 · 반 전체'},{id:'hs',ic:'🔍',t:'숨은 용의자 찾기',d:'사람들이 가득한 거리에서 단서에 맞는 범인을 찾아요! 기록 재기 · 제한 시간 · 몇 명 있을까?',tag:'읽기·듣기 · 반 기록'},{id:'mm',ic:'🃏',t:'단어 짝 맞추기',d:'색 단어 카드와 색 카드를 뒤집어 짝을 찾아요.',tag:'읽기 · 개별/팀'},{id:'st',ic:'🚦',t:'스트루프 챌린지',d:'글자를 읽을까, 색을 말할까? 헷갈려도 재미있어요.',tag:'읽기 · 반 전체'}]},
  
 ];
-HUB[0].items.push({id:'ff',ic:'👣',t:'발자국을 따라가라',d:'모두 활동지를 들고, 들리는 색깔 발자국을 따라 선을 그어 숨은 도둑을 찾아요.',tag:'듣기 · 활동지 · 반 전체'});
+HUB[0].items.push({nw:1,id:'ff',ic:'👣',t:'발자국을 따라가라',d:'모두 활동지를 들고, 들리는 색깔 발자국을 따라 선을 그어 숨은 도둑을 찾아요.',tag:'듣기 · 활동지 · 반 전체'});
 function renderClass(){
   gStop();
   if(G.id)return ({ff:ffSetup,hs:hsSetup,px:pxSetup,fp:fpSetup,c4:c4Setup,wp:wpSetup,mm:mmSetup,mc:mcSetup,st:stSetup})[G.id]();
   app.innerHTML=shell(`<div class="row" style="justify-content:space-between;margin:6px 0 16px"><div><h1 style="font-size:42px">🏫 수사 본부</h1><p class="soft" style="margin:4px 0 0;font-size:20px">범인을 잡으려면 수사 훈련이 필요해요! 전자칠판으로 반 전체가 함께 해요.</p></div><span class="stamp" style="font-size:24px">TRAINING</span></div>
-   <div class="hgrid hubgrid2">${HUB.map((g,gi)=>g.items.map(it=>`<button class="hcard hubc" data-g="${it.id}"><span class="hrow"><span class="htag hh${gi}">${g.h}</span><span class="hic">${it.ic}</span></span><b class="htitle">${it.t}</b><span class="hdesc">${it.d}</span><span class="hfoot">${it.tag}</span><span class="hgo">→</span></button>`).join('')).join('')}</div>`);
+   <div class="hgrid hubgrid2">${HUB.map((g,gi)=>g.items.map(it=>`<button class="hcard hubc" data-g="${it.id}"><span class="hrow"><span class="htag hh${gi}">${g.h}</span>${it.nw?'<span class="newb">NEW</span>':''}<span class="hic">${it.ic}</span></span><b class="htitle">${it.t}</b><span class="hdesc">${it.d}</span><span class="hfoot">${it.tag}</span><span class="hgo">→</span></button>`).join('')).join('')}</div>`);
   $$('[data-g]').forEach(b=>b.onclick=()=>{G.id=b.dataset.g;renderClass()});
 }
 
@@ -1710,9 +1711,10 @@ const QR=(()=>{
   return {make,svg}})();
 
 /* ---------- 학생 접속 QR · 학생용(몽타주만) 모드 ---------- */
-(()=>{const q=new URLSearchParams(location.search);if(q.has('s'))LS.set('mt_smode',1);if(q.has('t'))LS.set('mt_smode',0);
-  if(q.has('s')||q.has('t')){try{history.replaceState(null,'',location.pathname+location.hash)}catch(e){}}})();
-function STU(){return !!LS.get('mt_smode',0)}
+// 학생용: 주소 끝이 ?s 일 때만 몽타주 만들기만 보여요. ?s 없이 열면 언제나 교사용(전체)이에요.
+try{localStorage.removeItem('mt_smode')}catch(e){}
+const STU_ON=new URLSearchParams(location.search).has('s');
+function STU(){return STU_ON}
 let QRLOCK=LS.get('mt_qr_lock',1);
 function qrOpen(){const ov=document.createElement('div');ov.className='wsov qrov';document.body.appendChild(ov);
   const base=location.origin+location.pathname,isFile=location.protocol==='file:';
