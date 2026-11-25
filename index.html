@@ -338,6 +338,7 @@ html.bi .hubc .htitle .tr{font-family:var(--f-t);font-weight:800;font-size:17px;
 .qrc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4mm;text-align:center}
 .qrc b{font-size:28pt}.qrc svg{width:140mm;height:140mm}.qrcs{font-size:18pt}.qrcu{font-size:7.5pt;color:#444;word-break:break-all}
 .newb{display:inline-block;margin:0 auto 0 8px;align-self:center;background:#E8483B;color:#fff;font-family:var(--f-b,sans-serif);font-weight:800;font-size:13px;letter-spacing:.5px;padding:3px 8px;border-radius:999px;transform:translateY(-2px)}
+.qrfree{display:flex;gap:10px;align-items:flex-start;margin:-2px 0 2px 18px;font-size:16px;color:var(--soft,#777);cursor:pointer}.qrfree b{font-family:var(--f-d);font-weight:400;font-size:20px;color:var(--ink)}.qrfree input{width:22px;height:22px;margin-top:3px}
 </style>
 </head>
 <body>
@@ -872,8 +873,16 @@ const HUB=[
  
 ];
 HUB[0].items.push({nw:1,id:'ff',ic:'👣',t:'발자국을 따라가라',d:'모두 활동지를 들고, 들리는 색깔 발자국을 따라 선을 그어 숨은 도둑을 찾아요.',tag:'듣기 · 활동지 · 반 전체'});
+function renderFree(){
+  const items=HUB.flatMap((g,gi)=>g.items.map(it=>[it,g,gi])).filter(([it])=>SFREE.includes(it.id));
+  app.innerHTML=shell(`<div class="row" style="justify-content:space-between;margin:6px 0 16px"><div><h1 style="font-size:42px">🎮 자유 활동</h1><p class="soft" style="margin:4px 0 0;font-size:20px">몽타주를 다 만든 수사관을 위한 혼자 하는 훈련이에요. 소리는 이어폰으로 들어요.</p></div><span class="stamp" style="font-size:24px">BONUS</span></div>
+   <div class="hgrid hubgrid2">${items.map(([it,g,gi])=>`<button class="hcard hubc" data-g="${it.id}"><span class="hrow"><span class="htag hh${gi}">${g.h}</span><span class="hic">${it.ic}</span></span><b class="htitle">${it.t}</b><span class="hdesc">${it.d}</span><span class="hgo">→</span></button>`).join('')}</div>`);
+  $$('[data-g]').forEach(b=>b.onclick=()=>{G.id=b.dataset.g;renderClass()});
+}
 function renderClass(){
   gStop();
+  if(G.id&&STU()&&!SFREE.includes(G.id))G.id=null;
+  if(!G.id&&STU())return renderFree();
   if(G.id)return ({ff:ffSetup,hs:hsSetup,px:pxSetup,fp:fpSetup,c4:c4Setup,wp:wpSetup,mm:mmSetup,mc:mcSetup,st:stSetup})[G.id]();
   app.innerHTML=shell(`<div class="row" style="justify-content:space-between;margin:6px 0 16px"><div><h1 style="font-size:42px">🏫 수사 본부</h1><p class="soft" style="margin:4px 0 0;font-size:20px">범인을 잡으려면 수사 훈련이 필요해요! 전자칠판으로 반 전체가 함께 해요.</p></div><span class="stamp" style="font-size:24px">TRAINING</span></div>
    <div class="hgrid hubgrid2">${HUB.map((g,gi)=>g.items.map(it=>`<button class="hcard hubc" data-g="${it.id}"><span class="hrow"><span class="htag hh${gi}">${g.h}</span>${it.nw?'<span class="newb">NEW</span>':''}<span class="hic">${it.ic}</span></span><b class="htitle">${it.t}</b><span class="hdesc">${it.d}</span><span class="hfoot">${it.tag}</span><span class="hgo">→</span></button>`).join('')).join('')}</div>`);
@@ -1537,13 +1546,13 @@ function checkLock(){}
 async function saveScores(){}
 function teacherPanel(){return ''}
 function bindPanel(){document.onkeydown=e=>{if(ROUTE.name!=='oral'||!OR.cur||e.target.matches('input'))return;if(e.key===' '){if(OR.phase==='ask'){e.preventDefault();$('#next')?.click()}else if(OR.phase==='answer'||OR.phase==='reveal'){e.preventDefault();$('#nextw')?.click()}}}}
-function go(name,p={}){if(STU()&&name!=='make')name='make';stopBlink();hush();if(typeof gStop==='function')gStop();if(name==='class')G.id=null;if(REC&&REC.state==='recording')try{REC.stop()}catch(e){}ROUTE=Object.assign({name},p);render();scrollTo(0,0)}
+function go(name,p={}){if(STU()&&name!=='make'&&!(name==='class'&&FREEOK()))name='make';stopBlink();hush();if(typeof gStop==='function')gStop();if(name==='class')G.id=null;if(REC&&REC.state==='recording')try{REC.stop()}catch(e){}ROUTE=Object.assign({name},p);render();scrollTo(0,0)}
 function shell(inner){
-  const nav=STU()?[['make','🖍️ 몽타주 만들기']]:[['home','🏠 처음'],['class','🏫 수사 본부'],['make','🖍️ 몽타주 만들기'],['oral','🕵️ 범인을 찾아라']];
+  const nav=STU()?(FREEOK()?[['make','🖍️ 몽타주 만들기'],['class','🎮 자유 활동']]:[['make','🖍️ 몽타주 만들기']]):[['home','🏠 처음'],['class','🏫 수사 본부'],['make','🖍️ 몽타주 만들기'],['oral','🕵️ 범인을 찾아라']];
   return `<header class="top"><div class="top-in"><button class="logo" data-go="home"><span>🔍</span><b>색깔을 훔쳐간 범인</b></button>
    <nav class="nav">${nav.map(([k,t])=>`<button data-go="${k}" class="${ROUTE.name===k?'on':''}">${t}</button>`).join('')}</nav>
    <div class="right">${STU()?'<span class="stupill">🔒 학생용</span>':'<button class="btn sm" id="qrBtn">📱 학생 접속</button>'}<button class="btn sm" id="biBtn" title="English">🌐 한/EN</button><button class="btn sm" id="spd">${SPEED==='slow'?'🐢 천천히':'🐇 보통'}</button></div></div></header><main>${inner}</main>`}
-function render(){if(STU()&&ROUTE.name!=='make')ROUTE={name:'make'};({home:renderHome,class:renderClass,make:renderMake,oral:renderOral})[ROUTE.name]();applyBI()}
+function render(){if(STU()&&ROUTE.name!=='make'&&!(ROUTE.name==='class'&&FREEOK()))ROUTE={name:'make'};({home:renderHome,class:renderClass,make:renderMake,oral:renderOral})[ROUTE.name]();applyBI()}
 function renderHome(){
   const card=(go,tag,tone,title,en,desc)=>`<button data-go="${go}" class="hcard"><span class="htag ${tone}">${tag}</span><b class="htitle">${title}</b><span class="hen">${en}</span><span class="hdesc">${desc}</span><span class="hgo">→</span></button>`;
   app.innerHTML=shell(`<section class="hero"><div class="herotxt"><span class="stamp" style="font-size:20px">WANTED</span><h1>색깔을 훔쳐간 범인</h1>
@@ -1565,14 +1574,16 @@ function renderMake(){
   loadAll().then(()=>{[null,null,mkPick,mkPaint,mkWrite,mkRec,mkSubmit][SD.step]($('#mk'));const b=$('#bk');if(SD.step===2&&b&&!STU()){b.outerHTML='<div class="pmcall"><span>💡 크롬북이 없나요? 종이 활동지로 해도 코드로 발표할 수 있어요.</span><button class="btn yel" id="pmOpen">🖨 종이 몽타주 활동지</button></div>';$('#pmOpen').onclick=pmPrint}});
 }
 function mkSubmit(el){
-  const S=SUS[SD.sus];const code=encodeCode(SD.sus,SD.colors);LS.set('mt_mycode',{code,at:Date.now()});
+  const S=SUS[SD.sus];const code=encodeCode(SD.sus,SD.colors);LS.set('mt_mycode',{code,at:Date.now()});const firstDone=SS.get('mt_done')!=='1';SS.set('mt_done','1');
   const [L,D]=code.split('-');
   el.innerHTML=`<div class="split">${susCanvas('min(64vh,600px)')}<div class="folder col" style="gap:14px"><span class="stamp" style="justify-self:start;font-size:24px">수사 파일</span>
    <h2 style="font-size:32px">🔑 나의 수사 파일 코드</h2>
    <div class="codebox"><span class="cl">${L}</span><span class="cdash">-</span>${[...D].map((d,i)=>`<span class="cd"><b>${d}</b>${dot(SD.colors[i+1],26)}</span>`).join('')}</div>
    <p style="margin:0;font-size:22px;font-family:var(--f-d)">✏️ 이 코드를 종이에 꼭 적어 두세요!<br><span class="soft" style="font-size:18px">발표할 때 선생님이 칠판에 이 코드를 넣으면 내 범인이 똑같이 나타나요.</span></p>
    <div class="script" style="font-size:22px">${[1,2,3,4,5].map(p=>`<div>${CIRC[p]} <span class="soft" style="font-size:18px">${S.names[p-1]}</span> Look at the ${S.en[p-1]}. It's ${SD.colors[p]}.</div>`).join('')}</div>
-   <div class="row"><button class="btn" id="bk">◀ 묻고 답하기</button><button class="btn go" id="again" style="flex:1">🖍️ 새 범인 만들기</button></div></div></div>`;
+   <div class="row"><button class="btn" id="bk">◀ 묻고 답하기</button><button class="btn go" id="again" style="flex:1">🖍️ 새 범인 만들기</button>${FREEOK()?'<button class="btn blue" id="toFree">🎮 자유 활동</button>':''}</div></div></div>`;
+  if(FREEOK()&&firstDone){const nv=$('nav.nav');if(nv&&!nv.querySelector('[data-go="class"]'))nv.insertAdjacentHTML('beforeend','<button data-go="class">🎮 자유 활동</button>');applyBI()}
+  {const tf=$('#toFree');if(tf)tf.onclick=()=>go('class')}
   paintSus($('#sc'),SD.sus,SD.colors,{markers:true});confetti(120);ding(true);hush();speak('Great job, detective!');
   $('#bk').onclick=()=>sGo(5);
   $('#again').onclick=()=>{CLIPS=[null,null,null,null,null];CLIPSEC=[0,0,0,0,0];DONE=[0,0,0,0,0];QI=0;SD=newDraft();SD.step=2;saveSD();go('make')};
@@ -1714,28 +1725,32 @@ const QR=(()=>{
 // 학생용: 주소 끝이 ?s 일 때만 몽타주 만들기만 보여요. ?s 없이 열면 언제나 교사용(전체)이에요.
 try{localStorage.removeItem('mt_smode')}catch(e){}
 const STU_ON=new URLSearchParams(location.search).has('s');
+const SFREE_ON=new URLSearchParams(location.search).get('s')==='f';
+const SFREE=['fp','hs','mm'];
+function FREEOK(){return STU_ON&&SFREE_ON&&SS.get('mt_done')==='1'}
 function STU(){return STU_ON}
-let QRLOCK=LS.get('mt_qr_lock',1);
+let QRLOCK=LS.get('mt_qr_lock',1),QRFREE=LS.get('mt_qr_free',0);
 function qrOpen(){const ov=document.createElement('div');ov.className='wsov qrov';document.body.appendChild(ov);
   const base=location.origin+location.pathname,isFile=location.protocol==='file:';
-  const draw=()=>{const url=base+(QRLOCK?'?s':'');let q='';try{q=isFile?'':QR.svg(url,10,4)}catch(e){q=''}
+  const draw=()=>{const url=base+(QRLOCK?(QRFREE?'?s=f':'?s'):'');let q='';try{q=isFile?'':QR.svg(url,10,4)}catch(e){q=''}
     ov.innerHTML=`<div class="wsbar"><b style="font-family:var(--f-d);font-weight:400;font-size:26px">📱 학생 접속 QR</b><div class="row">${isFile?'':'<button class="btn yel" id="qrPr">🖨 QR 인쇄</button>'}<button class="btn sm" id="qrX">닫기</button></div></div>
     <div class="qrwrap"><div class="qrbox card">${isFile?'<p style="font-size:22px;padding:30px;max-width:360px">QR 코드는 <b>넷리파이·버셀 등에 올린 주소</b>로 열었을 때 만들어져요.<br>지금은 파일로 열려 있어요.</p>':q}</div>
      <div class="col" style="gap:16px;max-width:520px">
       <div class="col" style="gap:8px"><b class="lbl">학생 기기에서 열 화면</b>
        <button class="qropt ${QRLOCK?'on':''}" data-lk="1"><b>🖍️ 몽타주 만들기만</b><span>수사 본부 · 범인을 찾아라는 안 보여요</span></button>
+       ${QRLOCK?`<label class="qrfree"><input type="checkbox" id="qrFree" ${QRFREE?'checked':''}><span><b>🎮 다 만들면 자유 활동 열기</b><br>도둑의 발자국 추격 · 숨은 용의자 찾기 · 단어 짝 맞추기</span></label>`:''}
        <button class="qropt ${QRLOCK?'':'on'}" data-lk="0"><b>🔓 전체 열기</b><span>모든 메뉴가 보여요</span></button></div>
       
       
      </div></div>`;
-    $('#qrX',ov).onclick=()=>ov.remove();const pr=$('#qrPr',ov);if(pr)pr.onclick=()=>qrPrint(url);$$('[data-lk]',ov).forEach(b=>b.onclick=()=>{QRLOCK=+b.dataset.lk;LS.set('mt_qr_lock',QRLOCK);draw();applyBI()})};
+    $('#qrX',ov).onclick=()=>ov.remove();const pr=$('#qrPr',ov);if(pr)pr.onclick=()=>qrPrint(url);$$('[data-lk]',ov).forEach(b=>b.onclick=()=>{QRLOCK=+b.dataset.lk;LS.set('mt_qr_lock',QRLOCK);draw();applyBI()});const qf=$('#qrFree',ov);if(qf)qf.onchange=()=>{QRFREE=qf.checked?1:0;LS.set('mt_qr_free',QRFREE);draw();applyBI()}};
   draw();applyBI()}
-function qrPrint(url){const lock=url.endsWith('?s');let q='';try{q=QR.svg(url,4,2)}catch(e){return toast('QR을 만들 수 없어요')}
+function qrPrint(url){const lock=url.includes('?s');let q='';try{q=QR.svg(url,4,2)}catch(e){return toast('QR을 만들 수 없어요')}
   const card=`<div class="qrc"><b>${lock?'🖍 범인 몽타주 만들기':'🔍 색깔을 훔쳐간 범인'}</b>${q}<span class="qrcs">카메라로 찍으면 바로 열려요</span></div>`;
   let pa=$('#printArea');if(!pa){pa=document.createElement('div');pa.id='printArea';document.body.appendChild(pa)}pa.className='qrp';pa.innerHTML=card;
   setTimeout(()=>{try{window.print()}catch(e){}},300)}
 document.addEventListener('click',e=>{if(e.target.closest('#qrBtn'))qrOpen()});
-Object.assign(EN_DICT,{"📱 학생 접속":"📱 Student link","🔒 학생용":"🔒 Student","📱 학생 접속 QR":"📱 Student QR","학생 기기에서 열 화면":"What students will see","🖍️ 몽타주 만들기만":"🖍️ Sketch only","수사 본부 · 범인을 찾아라는 안 보여요":"HQ and Find the Thief are hidden","🔓 전체 열기":"🔓 Everything","모든 메뉴가 보여요":"All menus are shown","주소":"Address","🖨 QR 인쇄":"🖨 Print QR","🔓 학생용을 풀었어요":"🔓 Student mode off"});
+Object.assign(EN_DICT,{"📱 학생 접속":"📱 Student link","🎮 자유 활동":"🎮 Free play","🎮 다 만들면 자유 활동 열기":"🎮 Open free play after finishing","몽타주를 다 만든 수사관을 위한 혼자 하는 훈련이에요. 소리는 이어폰으로 들어요.":"Solo training for detectives who have finished their sketch. Use earphones.","🔒 학생용":"🔒 Student","📱 학생 접속 QR":"📱 Student QR","학생 기기에서 열 화면":"What students will see","🖍️ 몽타주 만들기만":"🖍️ Sketch only","수사 본부 · 범인을 찾아라는 안 보여요":"HQ and Find the Thief are hidden","🔓 전체 열기":"🔓 Everything","모든 메뉴가 보여요":"All menus are shown","주소":"Address","🖨 QR 인쇄":"🖨 Print QR","🔓 학생용을 풀었어요":"🔓 Student mode off"});
 
 applyBI();
 render();
