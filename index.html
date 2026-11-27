@@ -339,6 +339,20 @@ html.bi .hubc .htitle .tr{font-family:var(--f-t);font-weight:800;font-size:17px;
 .qrc b{font-size:28pt}.qrc svg{width:140mm;height:140mm}.qrcs{font-size:18pt}.qrcu{font-size:7.5pt;color:#444;word-break:break-all}
 .newb{display:inline-block;margin:0 auto 0 8px;align-self:center;background:#E8483B;color:#fff;font-family:var(--f-b,sans-serif);font-weight:800;font-size:13px;letter-spacing:.5px;padding:3px 8px;border-radius:999px;transform:translateY(-2px)}
 .qrfree{display:flex;gap:10px;align-items:flex-start;margin:-2px 0 2px 18px;font-size:16px;color:var(--soft,#777);cursor:pointer}.qrfree b{font-family:var(--f-d);font-weight:400;font-size:20px;color:var(--ink)}.qrfree input{width:22px;height:22px;margin-top:3px}
+.mccount{display:inline-block;min-width:64px;margin-left:10px;padding:0 14px;border-radius:999px;background:var(--ink);color:#fff}
+.mcgo{display:inline-block;font-size:110px;line-height:1;animation:pop .5s}
+.stduel{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.stside{border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px;border:4px solid transparent;transition:.2s}
+.stside.s0{background:#FFE3E0}.stside.s1{background:#DFEAFF}
+.stside.win{border-color:#2FA35B;box-shadow:0 0 0 6px #BFE8CC}.stside.locked{opacity:.55}
+.stwho{font-family:var(--f-d);font-size:30px;display:flex;justify-content:space-between;align-items:center}.stwho b{font-size:44px}
+.stopts{display:grid;grid-template-columns:1fr;gap:12px;flex:1}
+.stopt{font-family:var(--f-e);font-weight:700;font-size:40px;border:3px solid #2B2638;background:#fff;border-radius:18px;padding:10px;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.stopt.wrong{background:#555;color:#fff;text-decoration:line-through}.stopt.stok{background:#2FA35B;color:#fff;border-color:#2FA35B}
+.stmid{display:flex;flex-direction:column;justify-content:center}
+.sthard{display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:3px solid #E6DCCB;background:#fff;border-radius:14px;padding:8px 14px;font:inherit;cursor:pointer;text-align:left}
+.sthard b{font-family:var(--f-d);font-weight:400;font-size:22px}.sthard span{font-size:15px;color:var(--soft,#777)}.sthard.on{border-color:#E8483B;background:#FFE9E6}
+.stmode.flip{background:#E8483B!important;color:#fff!important}.stcard.flip{box-shadow:0 0 0 10px #E8483B}
 </style>
 </head>
 <body>
@@ -1048,10 +1062,14 @@ function ffGrid(n){const R=ffRng(n*7919+13);const g=[];
     g._cs=null;g.push(row)}
   return g}
 const ffEnd=p=>Math.floor(p[FF_R-1].c/2);
-function ffPath(g,used){let best=null;
-  for(let t=0;t<400;t++){let c=FF_S0+Math.floor(Math.random()*(FF_S1-FF_S0+1));const p=[{r:0,c}];
+// 같은 색 순서로 갈 수 있는 길이 딱 하나인지 세요 (1번 줄 어느 발자국에서 출발해도)
+function ffCount(g,seq){let n=0;const go=(r,c)=>{if(n>1||g[r][c]!==seq[r])return;if(r===FF_R-1){n++;return}for(const x of [c-1,c,c+1])if(x>=0&&x<FF_C)go(r+1,x)};for(let c=0;c<FF_C;c++)go(0,c);return n}
+function ffPath(g,used){let best=null,ok=null;
+  for(let t=0;t<2000;t++){let c=FF_S0+Math.floor(Math.random()*(FF_S1-FF_S0+1));const p=[{r:0,c}];
     for(let r=1;r<FF_R;r++){const o=[c-1,c,c+1].filter(x=>x>=0&&x<FF_C);c=pick(o);p.push({r,c})}
-    best=p;if(!used.includes(ffEnd(p)))break}
+    if(ffCount(g,p.map(s=>g[s.r][s.c]))!==1)continue;
+    if(!ok)ok=p;best=p;if(!used.includes(ffEnd(p)))break;best=null}
+  best=best||ok;if(!best){let c=FF_S0;best=[{r:0,c}];for(let r=1;r<FF_R;r++)best.push({r,c})}
   return best.map(s=>Object.assign(s,{color:g[s.r][s.c]}))}
 const FF_COLW=80,FF_LM=36,FF_W=FF_LM+FF_COLW*FF_C+6,FF_TOP=62,FF_ROWH=66,FF_SUSY=FF_TOP+FF_R*FF_ROWH+8,FF_SUSH=128,FF_H=FF_SUSY+FF_SUSH+28;
 const ffX=c=>FF_LM+FF_COLW*c+FF_COLW/2,ffY=r=>FF_TOP+FF_ROWH*r+FF_ROWH/2,ffSX=i=>FF_LM+FF_COLW*2*i+FF_COLW;
@@ -1165,52 +1183,93 @@ function mmStart(){
 }
 
 /* ---------- 5. 사라진 색깔 (워밍업) ---------- */
-let MC=Object.assign({n:4,sec:8,mix:false},LS.get('mt_mc_cfg',{}));
+let MC=Object.assign({n:4,sec:8,mix:false,mode:'all',think:5,two:false},LS.get('mt_mc_cfg',{}));
 function mcSetup(){
-  app.innerHTML=shell(gHead('🦹 사라진 색깔')+`<div class="folder" style="max-width:820px;margin:20px auto 0"><div class="col" style="gap:18px">
-   <p style="margin:0;font-size:24px">색 카드를 잘 기억해요. 도둑이 <b>하나를 훔쳐 가면</b>, 다 함께 <b class="en">"What color is it?"</b> 묻고 <b class="en">"It's ___!"</b>로 맞혀요.</p>
+  app.innerHTML=shell(gHead('🦹 사라진 색깔')+`<div class="folder" style="max-width:860px;margin:20px auto 0"><div class="col" style="gap:18px">
+   <p style="margin:0;font-size:24px">색 카드를 잘 기억해요. 도둑이 <b>하나를 훔쳐 가면</b>, 사라진 색을 <b class="en">"It's ___!"</b>로 맞혀요.</p>
+   <div class="col" style="gap:6px"><b class="lbl">진행 방식</b>${lvlBtns('pm',[['all','🗣 전체 연습'],['chorus','🤫 생각하고 다 함께']],MC.mode)}
+    <span class="soft" style="font-size:17px">${MC.mode==='chorus'?'색이 사라지면 조용히 생각할 시간을 주고, <b>3, 2, 1 신호에 맞춰 모두 동시에</b> 말해요. 먼저 말하기 경쟁이 없어요.':'색이 사라지면 바로 <span class="en">"What color is it?"</span> 질문이 나오고 자유롭게 대답해요.'}</span></div>
+   ${MC.mode==='chorus'?`<div class="col" style="gap:6px"><b class="lbl">생각하는 시간</b>${lvlBtns('tk',[[3,'3초'],[5,'5초'],[8,'8초']],MC.think)}</div>`:''}
+   <div class="col" style="gap:6px"><b class="lbl">🔥 어려움</b>${lvlBtns('tw',[[0,'1개 훔쳐 가기'],[1,'🔥 2개 훔쳐 가기']],MC.two?1:0)}${MC.two?'<span class="soft" style="font-size:17px">사라진 두 색을 <span class="en">"It\'s red and blue!"</span>처럼 말해요. 카드는 4장 이상이에요.</span>':''}</div>
    <div class="col" style="gap:6px"><b class="lbl">카드 수 (난이도)</b>${lvlBtns('n',[[3,'3장 ⭐'],[4,'4장 ⭐'],[5,'5장 ⭐⭐'],[6,'6장 ⭐⭐'],[7,'7장 ⭐⭐⭐'],[9,'9장 ⭐⭐⭐']],MC.n)}</div>
-   <div class="col" style="gap:6px"><b class="lbl">기억하는 시간</b>${lvlBtns('sc',[[5,'5초'],[8,'8초'],[10,'10초'],[15,'15초']],MC.sec)}</div>
+   <div class="col" style="gap:6px"><b class="lbl">기억하는 시간</b>${lvlBtns('sc',[[3,'🔥 3초'],[5,'5초'],[8,'8초'],[10,'10초'],[15,'15초']],MC.sec)}</div>
    <div class="col" style="gap:6px"><b class="lbl">카드 자리</b>${lvlBtns('mx',[[0,'그대로 (쉬움)'],[1,'섞기 (어려움)']],MC.mix?1:0)}</div>
    <button class="btn go big" id="go" style="justify-self:end">시작 🦹</button></div></div>`);
-  gBind();const sv=()=>{LS.set('mt_mc_cfg',MC);mcSetup()};$$('[data-n]').forEach(x=>x.onclick=()=>{MC.n=+x.dataset.n;sv()});$$('[data-sc]').forEach(x=>x.onclick=()=>{MC.sec=+x.dataset.sc;sv()});$$('[data-mx]').forEach(x=>x.onclick=()=>{MC.mix=x.dataset.mx==='1';sv()});$('#go').onclick=mcRound;
+  gBind();const sv=()=>{LS.set('mt_mc_cfg',MC);mcSetup()};$$('[data-pm]').forEach(x=>x.onclick=()=>{MC.mode=x.dataset.pm;sv()});$$('[data-tk]').forEach(x=>x.onclick=()=>{MC.think=+x.dataset.tk;sv()});$$('[data-tw]').forEach(x=>x.onclick=()=>{MC.two=x.dataset.tw==='1';if(MC.two&&MC.n<4)MC.n=4;sv()});
+  $$('[data-n]').forEach(x=>x.onclick=()=>{MC.n=+x.dataset.n;sv()});$$('[data-sc]').forEach(x=>x.onclick=()=>{MC.sec=+x.dataset.sc;sv()});$$('[data-mx]').forEach(x=>x.onclick=()=>{MC.mix=x.dataset.mx==='1';sv()});$('#go').onclick=mcRound;
 }
 function mcRound(){gStop();
-  const set=shuffle(W9).slice(0,MC.n);const miss=pick(set);let sec=MC.sec;
-  const cards=(arr,gap)=>`<div class="mcgrid">${arr.map(c=>c===gap?`<div class="mccard gap">?</div>`:`<div class="mccard" style="--c:${hex(c)}"><span class="en">${c}</span></div>`).join('')}</div>`;
+  const n=MC.two?Math.max(4,MC.n):MC.n;const set=shuffle(W9).slice(0,n);const misses=shuffle(set).slice(0,MC.two?2:1);const miss=misses[0];let sec=MC.sec;const chorus=MC.mode==='chorus';
+  const ansTxt=misses.length>1?`It's ${misses[0]} and ${misses[1]}!`:`It's ${miss}!`,blankTxt=misses.length>1?"It's ___ and ___!":"It's ___!";
+  const cards=(arr,gap)=>`<div class="mcgrid">${arr.map(c=>gap&&gap.includes(c)?`<div class="mccard gap" data-c="${c}">?</div>`:`<div class="mccard" style="--c:${hex(c)}"><span class="en">${c}</span></div>`).join('')}</div>`;
   app.innerHTML=shell(gHead('🦹 사라진 색깔',`<span class="pill" style="font-size:26px" id="mcT">👀 ${sec}</span>`)+`<p class="mcmsg" id="mcM">잘 기억해요!</p><div id="mcB">${cards(set)}</div><div class="row" style="justify-content:center;margin-top:16px" id="mcBtns"></div>`);
   gBind();hush();speak('Look carefully!');
   gI(()=>{sec--;const t=$('#mcT');if(t)t.textContent='👀 '+Math.max(sec,0);if(sec===0)steal()},1000);
+  const show=()=>{const gs=$$('.mccard.gap');if(!gs.length)return;gs.forEach(g=>{const c=g.dataset.c;g.classList.remove('gap');g.classList.add('pop');g.style.setProperty('--c',hex(c));g.innerHTML=`<span class="en">${c}</span>`});$('#mcM').innerHTML=`<span class="en">"${ansTxt}"</span> 🎉`;confetti(90);ding(true);hush();speak(ansTxt);
+    $('#mcBtns').innerHTML='<button class="btn go big" id="mcNext">다음 ▶</button>';$('#mcNext').onclick=mcRound};
   const steal=()=>{gStop();$('#mcT').hidden=true;$('#mcM').textContent='도둑이 나타났다! 🦹';$('#mcB').innerHTML=`<div class="thief">🦹💨</div>`;ding(false);
-    gT(()=>{const rest=MC.mix?shuffle(set):set;$('#mcB').innerHTML=cards(rest,miss);$('#mcM').innerHTML='<span class="en">What color is it?</span> 🤔';hush();speak('What color is it?');
-      $('#mcBtns').innerHTML='<button class="btn" id="mcSay">🔊 질문</button><button class="btn yel big" id="mcShow">정답 공개!</button>';
-      $('#mcSay').onclick=()=>{hush();speak('What color is it?')};
-      $('#mcShow').onclick=()=>{const g=$('.mccard.gap');g.classList.remove('gap');g.classList.add('pop');g.style.setProperty('--c',hex(miss));g.innerHTML=`<span class="en">${miss}</span>`;$('#mcM').innerHTML=`<span class="en">"It's ${miss}!"</span> 🎉`;confetti(90);ding(true);hush();speak(`It's ${miss}!`);
-        $('#mcBtns').innerHTML='<button class="btn go big" id="mcNext">다음 ▶</button>';$('#mcNext').onclick=mcRound}},1500)};
+    gT(()=>{const rest=MC.mix?shuffle(set):set;$('#mcB').innerHTML=cards(rest,misses);
+      if(!chorus){$('#mcM').innerHTML='<span class="en">What color is it?</span> 🤔';hush();speak('What color is it?');
+        $('#mcBtns').innerHTML='<button class="btn" id="mcSay">🔊 질문</button><button class="btn yel big" id="mcShow">정답 공개!</button>';
+        $('#mcSay').onclick=()=>{hush();speak('What color is it?')};$('#mcShow').onclick=show;return}
+      let t=MC.think;$('#mcM').innerHTML=`🤫 쉿! 생각만 해요 <span class="mccount" id="mcC">${t}</span>`;
+      $('#mcBtns').innerHTML='<button class="btn yel big" id="mcShow">정답 공개!</button>';$('#mcShow').onclick=show;
+      gI(()=>{t--;const c=$('#mcC');if(t>0){if(c)c.textContent=t;return}gStop();
+        const cd=['3','2','1'];let k=0;const step=()=>{if(k<3){$('#mcM').innerHTML=`<span class="mcgo">${cd[k]}</span>`;ding(false);k++;gT(step,800)}else{$('#mcM').innerHTML=`🗣 다 함께! <span class="en">"${blankTxt}"</span>`;ding(true)}};step()},1000)},1500)};
 }
 
 /* ---------- 6. 스트루프 챌린지 (워밍업) ---------- */
-let STP={mode:'color',sec:4};
+let STP=Object.assign({mode:'color',sec:4,play:'all',flash:false,flip:false,fast:false},LS.get('mt_st_cfg',{}));
 function stSetup(){
-  app.innerHTML=shell(gHead('🚦 스트루프 챌린지')+`<div class="folder" style="max-width:860px;margin:20px auto 0"><div class="col" style="gap:18px">
-   <p style="margin:0;font-size:24px">글자와 글자 색이 달라요! 화면이 알려 주는 대로 다 함께 크게 말해요.</p>
+  app.innerHTML=shell(gHead('🚦 스트루프 챌린지')+`<div class="folder" style="max-width:880px;margin:20px auto 0"><div class="col" style="gap:18px">
+   <p style="margin:0;font-size:24px">글자와 글자 색이 달라요! 화면이 알려 주는 대로 말하거나 골라요.</p>
    <div class="row" style="gap:14px"><div class="stdemo" style="color:${hex('blue')}">red</div><div style="font-size:22px">📖 <b>글자 읽기</b> → <span class="en">"Red!"</span><br>🎨 <b>색 말하기</b> → <span class="en">"It's blue!"</span></div></div>
-   <div class="col" style="gap:6px"><b style="font-family:var(--f-d);font-weight:400;font-size:22px">방식</b>${lvlBtns('md',[['read','📖 글자만 읽기'],['color','🎨 색만 말하기'],['mix','🔀 섞어서 (어려움)']],STP.mode)}</div>
-   <div class="col" style="gap:6px"><b style="font-family:var(--f-d);font-weight:400;font-size:22px">한 문제 시간</b>${lvlBtns('sc',[[5,'5초'],[4,'4초'],[3,'3초']],STP.sec)}</div>
+   <div class="col" style="gap:6px"><b class="lbl">진행 방식</b>${lvlBtns('pl',[['all','🗣 전체 연습'],['duel','⚔️ 1:1 대결']],STP.play)}
+    <span class="soft" style="font-size:17px">${STP.play==='duel'?'대표 2명이 칠판 앞에 나와요. 화면 왼쪽·오른쪽에서 각자 정답 단어를 눌러요. <b>먼저 맞힌 사람을 화면이 판정</b>해요. 틀리면 그 문제는 더 못 눌러요.':'반 전체가 화면을 보고 다 함께 크게 말해요.'}</span></div>
+   <div class="col" style="gap:6px"><b class="lbl">방식</b>${lvlBtns('md',[['read','📖 글자만 읽기'],['color','🎨 색만 말하기'],['mix','🔀 섞어서 (어려움)']],STP.mode)}</div>
+   <div class="col" style="gap:6px"><b class="lbl">🔥 어려움 (여러 개 골라도 돼요)</b><div class="row" style="gap:10px;flex-wrap:wrap">${[['flash','⚡ 번쩍','단어가 0.7초만 보여요'],['flip','🔄 반대로','빨간 테두리면 반대로 해요'],['fast','🏃 점점 빨라지기','문제마다 시간이 줄어요']].map(([k,t,d])=>`<button class="sthard ${STP[k]?'on':''}" data-hd="${k}"><b>${t}</b><span>${d}</span></button>`).join('')}</div></div>
+   <div class="col" style="gap:6px"><b class="lbl">한 문제 시간</b>${STP.play==='duel'?lvlBtns('sc',[[8,'8초'],[6,'6초'],[4,'4초']],STP.sec):lvlBtns('sc',[[5,'5초'],[4,'4초'],[3,'3초']],STP.sec)}</div>
    <button class="btn go big" id="go" style="justify-self:end">시작 🚦</button></div></div>`);
-  gBind();$$('[data-md]').forEach(x=>x.onclick=()=>{STP.mode=x.dataset.md;stSetup()});$$('[data-sc]').forEach(x=>x.onclick=()=>{STP.sec=+x.dataset.sc;stSetup()});$('#go').onclick=()=>stRun(0);
+  const sv=()=>{LS.set('mt_st_cfg',STP);stSetup()};
+  gBind();$$('[data-pl]').forEach(x=>x.onclick=()=>{STP.play=x.dataset.pl;STP.sec=STP.play==='duel'?6:4;sv()});$$('[data-md]').forEach(x=>x.onclick=()=>{STP.mode=x.dataset.md;sv()});$$('[data-hd]').forEach(x=>x.onclick=()=>{STP[x.dataset.hd]=!STP[x.dataset.hd];sv()});$$('[data-sc]').forEach(x=>x.onclick=()=>{STP.sec=+x.dataset.sc;sv()});
+  $('#go').onclick=()=>STP.play==='duel'?(STD={s:[0,0]},stDuel(0)):stRun(0);
 }
+function stMake(i){const word=pick(W9);const ink=pick(W9.filter(c=>c!==word));const shown=STP.mode==='mix'?pick(['read','color']):STP.mode;
+  const flip=STP.flip&&i>0&&Math.random()<.4;const mode=flip?(shown==='read'?'color':'read'):shown;
+  const secs=STP.fast?Math.max(STP.play==='duel'?2.5:1.5,STP.sec*Math.pow(.9,i)):STP.sec;
+  return {word,ink,shown,flip,mode,secs,key:mode==='read'?word:ink,ans:mode==='read'?CAP(word)+'!':`It's ${ink}!`}}
+const stLabel=r=>`<div class="stmode ${r.shown} ${r.flip?'flip':''}">${r.flip?'🔄 반대로! ':''}${r.shown==='read'?'📖 글자를 읽어요!':'🎨 색을 말해요!'}</div>`;
+const stFlash=()=>{if(!STP.flash)return;gT(()=>{const c=$('.stcard span');if(c){c.style.visibility='hidden'}},700)};
 function stRun(i){gStop();
   if(i>=10){app.innerHTML=shell(gHead('🚦 스트루프 챌린지')+`<div class="folder" style="max-width:640px;margin:40px auto 0;text-align:center"><span class="stamp" style="font-size:40px">CLEAR!</span><p style="font-family:var(--f-d);font-size:30px">10문제 끝! 헷갈렸던 색이 있었나요?</p><div class="row" style="justify-content:center"><button class="btn" id="stSet">방식 바꾸기</button><button class="btn go big" id="stAgain">한 번 더</button></div></div>`);gBind();confetti(120);$('#stAgain').onclick=()=>stRun(0);$('#stSet').onclick=stSetup;return}
-  const word=pick(W9);const ink=pick(W9.filter(c=>c!==word));const mode=STP.mode==='mix'?pick(['read','color']):STP.mode;
-  const ans=mode==='read'?CAP(word)+'!':`It's ${ink}!`;let left=STP.sec*10;
+  const R=stMake(i),{word,ink,ans}=R;const T=Math.round(R.secs*10);let left=T;
   app.innerHTML=shell(gHead('🚦 스트루프 챌린지',`<span class="pill" style="font-size:24px">${i+1} / 10</span><button class="btn sm" id="stPause">⏸ 멈춤</button>`)+
-   `<div class="stmode ${mode}">${mode==='read'?'📖 글자를 읽어요!':'🎨 색을 말해요!'}</div><div class="stcard"><span style="color:${hex(ink)}">${word}</span></div>
+   `${stLabel(R)}<div class="stcard ${R.flip?'flip':''}"><span style="color:${hex(ink)}">${word}</span></div>
     <div class="stbar"><i id="stBar"></i></div><p class="mcmsg" id="stAns" style="min-height:60px"></p>`);
   gBind();let paused=false;
   $('#stPause').onclick=e=>{paused=!paused;e.currentTarget.textContent=paused?'▶ 계속':'⏸ 멈춤'};
-  const reveal=()=>{gStop();$('#stAns').innerHTML=`<span class="en">"${ans}"</span>`;hush();speak(ans);gT(()=>{if(!paused)stRun(i+1);else{const b=$('#stPause');b.textContent='▶ 다음';b.onclick=()=>stRun(i+1)}},2200)};
-  gI(()=>{if(paused)return;left--;const b=$('#stBar');if(b)b.style.width=(left/(STP.sec*10)*100)+'%';if(left<=0)reveal()},100);
+  stFlash();
+  const reveal=()=>{gStop();const c=$('.stcard span');if(c)c.style.visibility='';$('#stAns').innerHTML=`<span class="en">"${ans}"</span>`;hush();speak(ans);gT(()=>{if(!paused)stRun(i+1);else{const b=$('#stPause');b.textContent='▶ 다음';b.onclick=()=>stRun(i+1)}},2200)};
+  gI(()=>{if(paused)return;left--;const b=$('#stBar');if(b)b.style.width=(left/T*100)+'%';if(left<=0)reveal()},100);
+}
+let STD={s:[0,0]};
+function stDuel(i){gStop();const N=10;
+  if(i>=N){const [a,b]=STD.s;const w=a===b?'무승부! 🤝':a>b?'🔴 왼쪽 승리!':'🔵 오른쪽 승리!';
+    app.innerHTML=shell(gHead('🚦 스트루프 1:1 대결')+`<div class="folder" style="max-width:700px;margin:40px auto 0;text-align:center"><span class="stamp" style="font-size:40px">${w}</span><p style="font-family:var(--f-d);font-size:40px;margin:16px 0">🔴 ${a} : ${b} 🔵</p><div class="row" style="justify-content:center"><button class="btn" id="stSet">방식 바꾸기</button><button class="btn go big" id="stAgain">다음 대결 ⚔️</button></div></div>`);
+    gBind();confetti(140);ding(true);$('#stAgain').onclick=()=>{STD={s:[0,0]};stDuel(0)};$('#stSet').onclick=stSetup;return}
+  const R=stMake(i),{word,ink,key,ans,mode}=R;const opts=shuffle([word,ink,...shuffle(W9.filter(c=>c!==word&&c!==ink)).slice(0,2)]);
+  const T=Math.round(R.secs*10);let left=T,done=false;const lock=[false,false];
+  const side=(p)=>`<div class="stside s${p}" id="sd${p}"><div class="stwho">${p?'🔵 오른쪽':'🔴 왼쪽'} <b id="sc${p}">${STD.s[p]}</b></div><div class="stopts">${shuffle(opts).map(c=>`<button class="stopt" data-p="${p}" data-c="${c}">${c}</button>`).join('')}</div></div>`;
+  app.innerHTML=shell(gHead('🚦 스트루프 1:1 대결',`<span class="pill" style="font-size:24px">${i+1} / ${N}</span>`)+
+   `<div class="stduel">${side(0)}<div class="stmid"><div class="stmode ${R.shown} ${R.flip?'flip':''}" style="font-size:32px">${R.flip?'🔄 반대로! ':''}${R.shown==='read'?'📖 글자를 읽어요!':'🎨 색을 골라요!'}</div><div class="stcard ${R.flip?'flip':''}" style="font-size:min(15vh,130px)"><span style="color:${hex(ink)}">${word}</span></div><div class="stbar"><i id="stBar"></i></div><p class="mcmsg" id="stAns" style="min-height:56px;font-size:34px"></p></div>${side(1)}</div>`);
+  gBind();stFlash();
+  const end=(p)=>{if(done)return;done=true;gStop();const sc=$('.stcard span');if(sc)sc.style.visibility='';
+    if(p!=null){STD.s[p]++;$('#sc'+p).textContent=STD.s[p];$('#sd'+p).classList.add('win');ding(true)}
+    $$(`.stopt[data-c="${key}"]`).forEach(b=>b.classList.add('stok'));
+    $('#stAns').innerHTML=`${p==null?'⏰ ':''}<span class="en">"${ans}"</span>`;hush();speak(ans);gT(()=>stDuel(i+1),2400)};
+  $$('.stopt').forEach(b=>b.addEventListener('pointerdown',e=>{e.preventDefault();const p=+b.dataset.p;if(done||lock[p])return;
+    if(b.dataset.c===key)end(p);else{lock[p]=true;b.classList.add('wrong');$('#sd'+p).classList.add('locked');ding(false);if(lock[0]&&lock[1])end(null)}}));
+  gI(()=>{left--;const b=$('#stBar');if(b)b.style.width=(left/T*100)+'%';if(left<=0)end(null)},100);
 }
 
 /* ---------- 🎨 픽셀아트 활동지 (인쇄) ---------- */
@@ -1380,7 +1439,7 @@ const EN_DICT={
 "학년 반 개수":"Number of classes","#개 반":"# classes","기록 모두 지우기":"Clear all records",
 "① 단어 (Red!)":"① Word (Red!)","② 문장 (It's red.)":"② Sentence (It's red.)","③ 발자국이 움직여요":"③ Moving footprints",
 "🙋 도전자 번호":"Player no.","추격 시작! 🐾":"Start the chase!",
-"단서 읽어 주기":"Read clues aloud","🔊 켜기":"🔊 On","🔇 끄기":"🔇 Off","끄면 아이들이 단서를 직접 읽어요. 게임 중에 🔊 단서 듣기 버튼을 누르면 들을 수 있어요.":"When off, students read the clues themselves. Tap 🔊 Hear clues anytime during the game.","👂 듣기":"👂 Listening","🗣 말하기":"🗣 Speaking","📖 읽기":"📖 Reading","👣 발자국을 따라가라":"👣 Follow the Footprints","발자국을 따라가라":"Follow the Footprints","모두 활동지를 들고, 들리는 색깔 발자국을 따라 선을 그어 숨은 도둑을 찾아요.":"Everyone holds a worksheet and draws a line along the footprint colors they hear to find the hidden thief.","듣기 · 활동지 · 반 전체":"Listening · Worksheet · Whole class","지도 번호 (활동지와 같아야 해요)":"Map no. (must match the worksheet)","지도 #번":"Map #","🎲 바꾸기":"🎲 Change","두 번씩 읽어 주기":"Read each one twice","🔁 켜기":"🔁 On","1번만":"Once","🖨 활동지 미리 보기 · 인쇄":"🖨 Preview & print worksheet","추격 시작! 👣":"Start the chase! 👣","활동지 지도 미리 보기 · 한 장으로 길 #번까지 할 수 있어요":"Worksheet map preview · up to # paths per sheet","🗺 지도 #번":"🗺 Map #","길 #번":"Path #","👂 발자국 #":"👂 Footprint #","다음 발자국 ▶":"Next footprint ▶","마지막 발자국 끝 ▶":"That was the last one ▶","🏁 도착!":"🏁 Arrived!","🔁 처음부터 다시 듣기":"🔁 Listen again from the start","정답 공개 🕵":"Reveal 🕵","들은 발자국":"Footprints you heard","수사 끝! 🏁":"Case closed! 🏁","🎨 컬러":"🎨 Color","⬛ 흑백 (색 단어)":"⬛ B&W (color words)","듣기 단계":"Listening level","👂 #번째 줄":"👂 Line #","🏆 반별 최고 기록":"Best time by class","#문제 · ① 단어 기준":"# questions · ① Word","#문제 · ② 문장 기준":"# questions · ② Sentence","#문제 · ③ 움직임 기준":"# questions · ③ Moving",
+"단서 읽어 주기":"Read clues aloud","🔊 켜기":"🔊 On","🔇 끄기":"🔇 Off","끄면 아이들이 단서를 직접 읽어요. 게임 중에 🔊 단서 듣기 버튼을 누르면 들을 수 있어요.":"When off, students read the clues themselves. Tap 🔊 Hear clues anytime during the game.","👂 듣기":"👂 Listening","🗣 말하기":"🗣 Speaking","📖 읽기":"📖 Reading","👣 발자국을 따라가라":"👣 Follow the Footprints","발자국을 따라가라":"Follow the Footprints","모두 활동지를 들고, 들리는 색깔 발자국을 따라 선을 그어 숨은 도둑을 찾아요.":"Everyone holds a worksheet and draws a line along the footprint colors they hear to find the hidden thief.","듣기 · 활동지 · 반 전체":"Listening · Worksheet · Whole class","지도 번호 (활동지와 같아야 해요)":"Map no. (must match the worksheet)","지도 #번":"Map #","🎲 바꾸기":"🎲 Change","두 번씩 읽어 주기":"Read each one twice","🔁 켜기":"🔁 On","1번만":"Once","🖨 활동지 미리 보기 · 인쇄":"🖨 Preview & print worksheet","추격 시작! 👣":"Start the chase! 👣","활동지 지도 미리 보기 · 한 장으로 길 #번까지 할 수 있어요":"Worksheet map preview · up to # paths per sheet","🗺 지도 #번":"🗺 Map #","길 #번":"Path #","👂 발자국 #":"👂 Footprint #","다음 발자국 ▶":"Next footprint ▶","마지막 발자국 끝 ▶":"That was the last one ▶","🏁 도착!":"🏁 Arrived!","🔁 처음부터 다시 듣기":"🔁 Listen again from the start","정답 공개 🕵":"Reveal 🕵","들은 발자국":"Footprints you heard","수사 끝! 🏁":"Case closed! 🏁","🎨 컬러":"🎨 Color","⬛ 흑백 (색 단어)":"⬛ B&W (color words)","듣기 단계":"Listening level","👂 #번째 줄":"👂 Line #","🗣 전체 연습":"🗣 Whole-class practice","🤫 생각하고 다 함께":"🤫 Think, then all together","⚔️ 1:1 대결":"⚔️ 1:1 Duel","진행 방식":"How to play","생각하는 시간":"Thinking time","🔴 왼쪽":"🔴 Left","🔵 오른쪽":"🔵 Right","🚦 스트루프 1:1 대결":"🚦 Stroop 1:1 Duel","🎨 색을 골라요!":"🎨 Pick the color!","다음 대결 ⚔️":"Next duel ⚔️","무승부! 🤝":"Draw! 🤝","🔴 왼쪽 승리!":"🔴 Left wins!","🔵 오른쪽 승리!":"🔵 Right wins!","🤫 쉿! 생각만 해요":"🤫 Shh! Just think","🗣 다 함께!":"🗣 All together!","🔥 어려움":"🔥 Hard","1개 훔쳐 가기":"Steal 1","🔥 2개 훔쳐 가기":"🔥 Steal 2","🔥 어려움 (여러 개 골라도 돼요)":"🔥 Hard (pick any)","⚡ 번쩍":"⚡ Flash","단어가 0.7초만 보여요":"The word shows for 0.7 s","🔄 반대로":"🔄 Flip","빨간 테두리면 반대로 해요":"Red frame = do the opposite","🏃 점점 빨라지기":"🏃 Speed up","문제마다 시간이 줄어요":"Less time each round","🔥 3초":"🔥 3 s","🏆 반별 최고 기록":"Best time by class","#문제 · ① 단어 기준":"# questions · ① Word","#문제 · ② 문장 기준":"# questions · ② Sentence","#문제 · ③ 움직임 기준":"# questions · ③ Moving",
 "#반 순위":"Class # ranking","아직 기록이 없어요. 첫 기록에 도전!":"No records yet. Be the first!",
 "🔊 다시 듣기":"Listen again","잘 듣고 터치해요!":"Listen and touch!","앗! 다시 잘 들어 봐요 (+#초)":"Oops! Listen again (+# sec)",
 "체포 완료!":"Caught!","다음 도전자":"Next player","도전! 🐾":"Go!","🏆 기록 보기 · 설정":"Records · Settings",
